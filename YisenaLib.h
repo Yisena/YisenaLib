@@ -330,6 +330,11 @@ extern void FollowTargetWindow(HWND own, HWND target, d2d* lpD2d);
 /// <param name="lpD2d">d2d设备指针</param>
 extern void FollowTargetWindow(HWND parent, HWND paint, HWND target, d2d* lpD2d);
 /// <summary>
+/// 激活窗口(PAINT)
+/// </summary>
+/// <param name="hWnd">窗口句柄</param>
+extern void ActivateWindow(HWND hWnd);
+/// <summary>
 /// 初始化托盘通知图标
 /// </summary>
 /// <param name="hWnd">窗口句柄</param>

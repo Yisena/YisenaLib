@@ -386,6 +386,14 @@ void FollowTargetWindow(HWND parent, HWND paint,HWND target, d2d* lpD2d)
         InitD2D(paint, lpD2d);
     }
 }
+
+void ActivateWindow(HWND hWnd)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hWnd, &ps);
+    // TODO: 在此处添加使用 hdc 的任何绘图代码...
+    EndPaint(hWnd, &ps);
+}
 //初始化托盘图标
 void InitNotifyIcon(HWND hWnd,HICON hIcon,LPCTSTR tip, DWORD id,PNOTIFYICONDATA pnid)
 {
