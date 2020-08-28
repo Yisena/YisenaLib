@@ -343,11 +343,19 @@ inline void DrawStr(d2d* lpD2d, LPCTSTR str, const D2D1_RECT_F &rect)
 }
 void FollowTargetWindow(HWND own, HWND target,d2d* lpD2d)
 {
-    static POINT tmp;
+    static POINT tmp, tmp1;
     POINT gw = { 0 };
     GetClientRect(target, &lpD2d->rc);
     ClientToScreen(target, &gw);
-    SetWindowPos(own, NULL, gw.x, gw.y, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOREDRAW);
+    if (tmp1.x != gw.x || tmp1.y != gw.y)
+    {
+        SetWindowPos(own, NULL, gw.x, gw.y, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOREDRAW);
+        tmp1 = gw;
+    }
+    else
+    {
+        Sleep(50);
+    }
     if (tmp.x != lpD2d->rc.right || tmp.y != lpD2d->rc.bottom)
     {
         ReleaseD2D(lpD2d);
@@ -357,17 +365,26 @@ void FollowTargetWindow(HWND own, HWND target,d2d* lpD2d)
 }
 void FollowTargetWindow(HWND parent, HWND paint,HWND target, d2d* lpD2d)
 {
-    static POINT tmp;
+    static POINT tmp,tmp1;
     POINT gw = { 0 };
     GetClientRect(target, &lpD2d->rc);
     ClientToScreen(target, &gw);
-    SetWindowPos(parent, NULL, gw.x, gw.y, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOREDRAW);
-    //绘制子窗口跟随父窗口并置底
-    SetWindowPos(paint, HWND_BOTTOM, 0, 0, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOACTIVATE | SWP_NOREDRAW);
+    if (tmp1.x != gw.x || tmp1.y != gw.y)
+    {
+        SetWindowPos(parent, NULL, gw.x, gw.y, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOREDRAW);
+        tmp1 = gw;
+    }
+    else
+    {
+        Sleep(50);
+    }
+
     if (tmp.x != lpD2d->rc.right || tmp.y != lpD2d->rc.bottom)
     {
         ReleaseD2D(lpD2d);
         tmp = { lpD2d->rc.right,lpD2d->rc.bottom };
+        //绘制子窗口跟随父窗口并置底
+        SetWindowPos(paint, HWND_BOTTOM, 0, 0, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOACTIVATE | SWP_NOREDRAW);
         InitD2D(paint, lpD2d);
     }
 }
