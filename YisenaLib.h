@@ -8,6 +8,7 @@
 #pragma comment(lib,"YisenaLib.lib")
 
 #define WM_NOTIFYICON (WM_USER+51)
+#define WM_CREATED2D (WM_USER+52)
 #define CREATEHINSTANCE(x) (((LPCREATESTRUCT)x)->hInstance)
 /// <summary>
 /// d2d设备
@@ -116,6 +117,15 @@ extern HWND CreateTransparentWindow(LPCTSTR lpszClassName, const RECT &rect,HINS
 /// <returns>控件句柄</returns>
 extern inline HWND CreateMdiClient(HWND parent, DWORD id, HINSTANCE hInstance);
 /// <summary>
+/// 创建MDICLIENT
+/// </summary>
+/// <param name="parent">父窗口句柄</param>
+/// <param name="id">控件id</param>
+/// <param name="hMenu">菜单句柄</param>
+/// <param name="hInstance">模块句柄</param>
+/// <returns>控件句柄</returns>
+extern inline HWND CreateMdiClient(HWND parent, DWORD id, HMENU hMenu, HINSTANCE hInstance);
+/// <summary>
 /// 创建MDI子窗口
 /// </summary>
 /// <param name="parent">MDICLIENT窗口句柄</param>
@@ -163,11 +173,47 @@ extern HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* 
 /// <returns>新窗口句柄</returns>
 extern inline HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* pd2d);
 /// <summary>
-/// 去窗口系统菜单
+/// 删除窗口样式
 /// </summary>
 /// <param name="hwnd">窗口句柄</param>
+/// <param name="style">样式</param>
 /// <returns>是否成功</returns>
-extern inline bool SetWindowNoSysMenu(HWND hwnd);
+bool DeleteWindowStyle(HWND hwnd, UINT style);
+/// <summary>
+/// 添加窗口样式
+/// </summary>
+/// <param name="hwnd">窗口句柄</param>
+/// <param name="style">样式</param>
+/// <returns>是否成功</returns>
+bool AddWindowStyle(HWND hwnd, UINT style);
+/// <summary>
+/// 设置窗口样式
+/// </summary>
+/// <param name="hwnd">窗口句柄</param>
+/// <param name="style">样式</param>
+/// <returns>是否成功</returns>
+bool SetWindowStyle(HWND hwnd, UINT style);
+/// <summary>
+/// 删除窗口样式(EX)
+/// </summary>
+/// <param name="hwnd">窗口句柄</param>
+/// <param name="style">样式</param>
+/// <returns>是否成功</returns>
+bool DeleteWindowStyleEx(HWND hwnd, UINT style);
+/// <summary>
+/// 添加窗口样式(EX)
+/// </summary>
+/// <param name="hwnd">窗口句柄</param>
+/// <param name="style">样式</param>
+/// <returns>是否成功</returns>
+bool AddWindowStyleEx(HWND hwnd, UINT style);
+/// <summary>
+/// 设置窗口样式(EX)
+/// </summary>
+/// <param name="hwnd">窗口句柄</param>
+/// <param name="style">样式</param>
+/// <returns>是否成功</returns>
+bool SetWindowStyleEx(HWND hwnd, UINT style);
 /// <summary>
 /// 删除所有子窗口(配合EnumChildWindows使用)
 /// </summary>
@@ -372,7 +418,13 @@ extern inline bool CheckTaskBarRecreated(UINT msg);
 /// </summary>
 /// <param name="vKey">按键码</param>
 /// <returns>是否被点击</returns>
-extern bool isKeyClicked(int vKey);
+extern bool IsKeyClicked(DWORD vKey);
+/// <summary>
+/// 指定按键是否按下
+/// </summary>
+/// <param name="vKey">按键码</param>
+/// <returns>是否按下</returns>
+extern inline bool IsKeyDown(DWORD vKey);
 /// <summary>
 /// 创建位图画刷
 /// </summary>
@@ -380,3 +432,9 @@ extern bool isKeyClicked(int vKey);
 /// <param name="hInstance">模块句柄</param>
 /// <returns>画刷句柄</returns>
 extern HBRUSH CreateBitMapBrush(DWORD resId, HINSTANCE hInstance);
+/// <summary>
+/// 开关窗口
+/// </summary>
+/// <param name="hWnd">窗口句柄</param>
+/// <returns>是否成功</returns>
+extern bool SwitchWindow(HWND hWnd);

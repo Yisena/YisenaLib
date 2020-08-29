@@ -55,12 +55,12 @@ bool RegisterWindowClass(LPCTSTR lpszClassName, WNDPROC lpfnWndProc, HINSTANCE h
 //重载
 inline bool RegisterWindowClass(LPCTSTR lpszClassName, WNDPROC lpfnWndProc, HINSTANCE hInstance)
 {
-    return RegisterWindowClass(lpszClassName, lpfnWndProc,hInstance,(HBRUSH)GetStockObject(WHITE_BRUSH),NULL,NULL);
+    return RegisterWindowClass(lpszClassName, lpfnWndProc,hInstance,(HBRUSH)GetStockObject(WHITE_BRUSH),NULL,LoadCursor(hInstance, IDC_ARROW));
 }
 //重载背景
 inline bool RegisterWindowClass(LPCTSTR lpszClassName, WNDPROC lpfnWndProc, HINSTANCE hInstance, HBRUSH hBackGroundBrush)
 {
-    return RegisterWindowClass(lpszClassName, lpfnWndProc, hInstance, hBackGroundBrush, NULL, NULL);
+    return RegisterWindowClass(lpszClassName, lpfnWndProc, hInstance, hBackGroundBrush, NULL, LoadCursor(hInstance, IDC_ARROW));
 }
 //重载图标和指针
 inline bool RegisterWindowClass(LPCTSTR lpszClassName, WNDPROC lpfnWndProc, HINSTANCE hInstance, HICON hIcon, HCURSOR hCursor)
@@ -90,8 +90,14 @@ HWND CreateTransparentWindow(LPCTSTR lpszClassName, const RECT& rect,HINSTANCE h
 //创建MDI客户区
 inline HWND CreateMdiClient(HWND parent,DWORD id,HINSTANCE hInstance)
 {
-    CLIENTCREATESTRUCT ccs; ccs = { NULL,600 };
+    CLIENTCREATESTRUCT ccs = { NULL,600 };
     return CreateWindowEx(MDIS_ALLCHILDSTYLES,L"MDICLIENT", NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 0, 0, 0, 0, parent, HMENU(id), hInstance, (LPVOID)&ccs);
+}
+//菜单重载
+inline HWND CreateMdiClient(HWND parent, DWORD id, HMENU hMenu,HINSTANCE hInstance)
+{
+    CLIENTCREATESTRUCT ccs = { hMenu,600 };
+    return CreateWindowEx(MDIS_ALLCHILDSTYLES, L"MDICLIENT", NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 0, 0, 0, 0, parent, HMENU(id), hInstance, (LPVOID)&ccs);
 }
 //创建mdi子窗口
 inline HWND CreateMdiChildWindow(HWND mdiClient, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, HINSTANCE hInstance)
@@ -124,10 +130,29 @@ inline HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* 
 {
     return CreatePaintMdiChildWindow(mdiClient, hInstance, pd2d, DefMDIChildProc);
 }
-//去系统菜单
-inline bool SetWindowNoSysMenu(HWND hwnd)
+bool DeleteWindowStyle(HWND hwnd, UINT style)
 {
-    return SetWindowLong(hwnd, GWL_STYLE, GetWindowLongW(hwnd, GWL_STYLE) & ~WS_SYSMENU);
+    return SetWindowLong(hwnd, GWL_STYLE, GetWindowLongW(hwnd, GWL_STYLE) & ~style);
+}
+bool AddWindowStyle(HWND hwnd, UINT style)
+{
+    return SetWindowLong(hwnd, GWL_STYLE, GetWindowLongW(hwnd, GWL_STYLE) | style);
+}
+bool SetWindowStyle(HWND hwnd, UINT style)
+{
+    return SetWindowLong(hwnd, GWL_STYLE, style);
+}
+bool DeleteWindowStyleEx(HWND hwnd, UINT style)
+{
+    return SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE) & ~style);
+}
+bool AddWindowStyleEx(HWND hwnd, UINT style)
+{
+    return SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLongW(hwnd, GWL_EXSTYLE) | style);
+}
+bool SetWindowStyleEx(HWND hwnd, UINT style)
+{
+    return SetWindowLong(hwnd, GWL_EXSTYLE, style);
 }
 //回调函数，删除所有子窗口
 BOOL CALLBACK CloseEnumProc(HWND hwnd, LPARAM lParam)
@@ -150,7 +175,6 @@ inline bool FreeWinodwHeap(HWND hwnd)
 //消息循环
 int MessageLoop()
 {
-
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0))
     {
@@ -381,20 +405,19 @@ void FollowTargetWindow(HWND parent, HWND paint,HWND target, d2d* lpD2d)
 
     if (tmp.x != lpD2d->rc.right || tmp.y != lpD2d->rc.bottom)
     {
-        ReleaseD2D(lpD2d);
         tmp = { lpD2d->rc.right,lpD2d->rc.bottom };
         //绘制子窗口跟随父窗口并置底
         SetWindowPos(paint, HWND_BOTTOM, 0, 0, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOACTIVATE | SWP_NOREDRAW);
-        InitD2D(paint, lpD2d);
+        PostMessage(paint, WM_CREATED2D, NULL, NULL);
     }
 }
-
+//激活窗口
 void ActivateWindow(HWND hWnd)
 {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hWnd, &ps);
-    // TODO: 在此处添加使用 hdc 的任何绘图代码...
     EndPaint(hWnd, &ps);
+    ReleaseDC(hWnd, hdc);
 }
 //初始化托盘图标
 void InitNotifyIcon(HWND hWnd,HICON hIcon,LPCTSTR tip, DWORD id,PNOTIFYICONDATA pnid)
@@ -432,7 +455,7 @@ inline bool CheckTaskBarRecreated(UINT msg)
     return msg == WM_TASKBARCREATED;
 }
 //指定按键是否被按下
-bool isKeyClicked(int vKey)
+bool IsKeyClicked(DWORD vKey)
 {
     //待优化
     static bool selectedKeyPress[255]{ false };
@@ -449,12 +472,20 @@ bool isKeyClicked(int vKey)
     }
     return false;
 }
-inline bool isKeyDown(int vKey)
+inline bool IsKeyDown(DWORD vKey)
 {
-    if (vKey > 255)
+    if (LOWORD(vKey) > 255 || HIWORD(vKey > 255))
         return false;
     return GetAsyncKeyState(vKey) & 0x8000;
 }
+//int getPressedKey()
+//{
+//    for (int i = 0; i < 255; i++) {
+//        if (GetAsyncKeyState(i) & 0x8000)
+//            return i;
+//    }
+//    return 0;
+//}
 
 HBRUSH CreateBitMapBrush(DWORD resId,HINSTANCE hInstance)
 {
@@ -465,4 +496,8 @@ HBRUSH CreateBitMapBrush(DWORD resId,HINSTANCE hInstance)
     //删除位图句柄
     DeleteObject(hbm);
     return hbr;
+}
+bool SwitchWindow(HWND hWnd)
+{
+    return ShowWindow(hWnd, IsWindowVisible(hWnd) ? SW_HIDE : SW_SHOW);
 }
