@@ -3,7 +3,7 @@
 BOOL SelectFileDlg(HWND hWnd,LPTSTR lpStrFile, LPCTSTR lpStrInitialDir,DWORD flags)
 {
     OPENFILENAME ofn = { 0 };
-    ofn.lStructSize = sizeof(ofn);
+    ofn.lStructSize = sizeof(OPENFILENAME);
     ofn.hwndOwner = hWnd;
     ofn.lpstrFilter = NULL;
     ofn.lpstrInitialDir = lpStrInitialDir;//默认的文件路径   
@@ -17,6 +17,36 @@ BOOL SelectFileDlg(HWND hWnd,LPTSTR lpStrFile, LPCTSTR lpStrInitialDir,DWORD fla
 BOOL SelectFileDlg(HWND hWnd, LPTSTR lpStrFile)
 {
     return SelectFileDlg(hWnd, lpStrFile, TEXT(".\\"), OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_EXPLORER);
+}
+
+BOOL SelectColorDlg(HWND hWnd,LPDWORD lpColor)
+{
+    static COLORREF crCustColors[16];
+    CHOOSECOLOR cs;
+    cs.lStructSize = sizeof(CHOOSECOLOR);
+    cs.hwndOwner = hWnd;
+    cs.Flags = CC_ANYCOLOR;
+    cs.lpCustColors = crCustColors;
+    cs.hInstance = 0;
+    cs.lpTemplateName = 0;
+    cs.lpfnHook = 0;
+    BOOL result = ChooseColor(&cs);
+    WORD tmp;
+    tmp = LOWORD(cs.rgbResult);
+    *lpColor = (LOBYTE(tmp) << 16) + (HIBYTE(tmp) << 8) + HIWORD(cs.rgbResult);
+    return result;
+}
+BOOL SelectFont(HWND hWnd,HFONT* lpFont)
+{
+    CHOOSEFONT cs;
+    LOGFONT lf;
+    cs.lStructSize = sizeof(CHOOSEFONT);
+    cs.hwndOwner = hWnd;
+    cs.Flags = CF_INITTOLOGFONTSTRUCT | CF_EFFECTS | CF_SCREENFONTS;
+    cs.lpLogFont = &lf;
+    BOOL result = ChooseFont(&cs);
+    *lpFont = CreateFontIndirect(&lf);
+    return result;
 }
 
 void ErrorDlg(DWORD eCode)
@@ -70,7 +100,7 @@ inline bool RegisterWindowClass(LPCTSTR lpszClassName, WNDPROC lpfnWndProc, HINS
 //创建一个无边框透明窗口
 HWND CreateTransparentWindow(LPCTSTR lpszClassName, const RECT &rect,HMENU hMenu,HINSTANCE hInstance)
 {
-    HWND hwnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_LAYERED| WS_EX_TOOLWINDOW| WS_EX_NOINHERITLAYOUT, lpszClassName, NULL, WS_POPUP| WS_CLIPCHILDREN,
+    HWND hwnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_LAYERED| WS_EX_TOOLWINDOW, lpszClassName, NULL, WS_POPUP| WS_CLIPCHILDREN,
         rect.left, rect.top, rect.right, rect.bottom, nullptr, hMenu, hInstance, nullptr);
     ShowWindow(hwnd, SW_SHOWDEFAULT);
     PostMessage(hwnd, WM_PAINT, NULL, NULL);//UpdateWindow不管用
@@ -80,7 +110,7 @@ HWND CreateTransparentWindow(LPCTSTR lpszClassName, const RECT &rect,HMENU hMenu
 //重载无菜单
 HWND CreateTransparentWindow(LPCTSTR lpszClassName, const RECT& rect,HINSTANCE hInstance)
 {
-    HWND hwnd = CreateWindowExW(WS_EX_TOPMOST |WS_EX_LAYERED | WS_EX_TOOLWINDOW| WS_EX_NOINHERITLAYOUT, lpszClassName, NULL, WS_POPUP| WS_CLIPCHILDREN,
+    HWND hwnd = CreateWindowExW(WS_EX_TOPMOST |WS_EX_LAYERED | WS_EX_TOOLWINDOW, lpszClassName, NULL, WS_POPUP| WS_CLIPCHILDREN,
         rect.left, rect.top, rect.right, rect.bottom, nullptr, NULL, hInstance, nullptr);
     ShowWindow(hwnd, SW_SHOWDEFAULT);
     PostMessage(hwnd, WM_PAINT, NULL, NULL);//UpdateWindow不管用
@@ -500,4 +530,24 @@ HBRUSH CreateBitMapBrush(DWORD resId,HINSTANCE hInstance)
 bool SwitchWindow(HWND hWnd)
 {
     return ShowWindow(hWnd, IsWindowVisible(hWnd) ? SW_HIDE : SW_SHOW);
+}
+
+void BeginRander(d2d* lpD2d, D2D1::ColorF color)
+{
+    lpD2d->pRenderTarget->BeginDraw();
+    lpD2d->pRenderTarget->Clear(color);
+}
+
+void EndRander(d2d* lpD2d)
+{
+    lpD2d->pRenderTarget->EndDraw();
+}
+
+bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc,LPVOID args)
+{
+    HANDLE hThread = CreateThread(NULL, NULL, lpThreadFunc, args, 0, 0);
+    if (!hThread)
+        return false;
+    CloseHandle(hThread);
+    return true;
 }

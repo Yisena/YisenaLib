@@ -34,10 +34,24 @@ extern BOOL SelectFileDlg(HWND hWnd, LPTSTR lpStrFile, LPCTSTR lpStrInitialDir, 
 /// <summary>
 /// 选择文件对话框(默认参数)
 /// </summary>
-/// <param name="hWnd">窗口路径</param>
+/// <param name="hWnd">窗口句柄</param>
 /// <param name="lpStrFile">(返回)文件路径</param>
 /// <returns>是否成功</returns>
 extern BOOL SelectFileDlg(HWND hWnd, LPTSTR lpStrFile);
+/// <summary>
+/// 选择颜色对话框
+/// </summary>
+/// <param name="hWnd">窗口句柄</param>
+/// <param name="lpColor">(返回)选择的颜色值</param>
+/// <returns>是否选择</returns>
+extern BOOL SelectColorDlg(HWND hWnd, LPDWORD lpColor);
+/// <summary>
+/// 选择字体(未测试)
+/// </summary>
+/// <param name="hWnd">窗口句柄</param>
+/// <param name="lpFont">(返回)选择的颜色值</param>
+/// <returns>是否成功</returns>
+extern BOOL SelectFont(HWND hWnd, HFONT* lpFont);
 /// <summary>
 /// 错误弹窗(弹出一个显示错误码的消息框)
 /// </summary>
@@ -438,3 +452,21 @@ extern HBRUSH CreateBitMapBrush(DWORD resId, HINSTANCE hInstance);
 /// <param name="hWnd">窗口句柄</param>
 /// <returns>是否成功</returns>
 extern bool SwitchWindow(HWND hWnd);
+/// <summary>
+/// 开始绘制
+/// </summary>
+/// <param name="lpD2d">d2d设备指针</param>
+/// <param name="color">颜色</param>
+extern void BeginRander(d2d* lpD2d, D2D1::ColorF color);
+/// <summary>
+/// 结束绘制
+/// </summary>
+/// <param name="lpD2d">d2d设备指针</param>
+extern void EndRander(d2d* lpD2d);
+/// <summary>
+/// 以新线程启动函数
+/// </summary>
+/// <param name="lpThreadFunc">线程函数</param>
+/// <param name="args">参数</param>
+/// <returns>是否成功</returns>
+extern bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc, LPVOID args);
