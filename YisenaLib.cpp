@@ -121,13 +121,13 @@ HWND CreateTransparentWindow(LPCTSTR lpszClassName, const RECT& rect,HINSTANCE h
 inline HWND CreateMdiClient(HWND parent,DWORD id,HINSTANCE hInstance)
 {
     CLIENTCREATESTRUCT ccs = { NULL,600 };
-    return CreateWindowEx(MDIS_ALLCHILDSTYLES,L"MDICLIENT", NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 0, 0, 0, 0, parent, HMENU(id), hInstance, (LPVOID)&ccs);
+    return CreateWindow(L"MDICLIENT", NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 0, 0, 0, 0, parent, HMENU(id), hInstance, (LPVOID)&ccs);
 }
 //菜单重载
 inline HWND CreateMdiClient(HWND parent, DWORD id, HMENU hMenu,HINSTANCE hInstance)
 {
     CLIENTCREATESTRUCT ccs = { hMenu,600 };
-    return CreateWindowEx(MDIS_ALLCHILDSTYLES, L"MDICLIENT", NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 0, 0, 0, 0, parent, HMENU(id), hInstance, (LPVOID)&ccs);
+    return CreateWindow(L"MDICLIENT", NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 0, 0, 0, 0, parent, HMENU(id), hInstance, (LPVOID)&ccs);
 }
 //创建mdi子窗口
 inline HWND CreateMdiChildWindow(HWND mdiClient, LPCTSTR lpszClassName, LPCTSTR lpszWindowName, HINSTANCE hInstance)
@@ -144,21 +144,22 @@ inline HWND CreateMdiChildWindow(HWND mdiClient, LPCTSTR lpszClassName, LPCTSTR 
 {
     return CreateMDIWindow(lpszClassName, lpszWindowName, NULL, rect.left, rect.top, rect.right, rect.bottom, mdiClient, hInstance, lParam);
 }
-HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* pd2d, WNDPROC PaintWinProc)
+HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, WNDPROC PaintWinProc)
 {
+    RECT rc;
     LPCTSTR className = L"PAINTCLASS";
-    RegisterWindowClass(className, PaintWinProc,hInstance,(HBRUSH)COLOR_APPWORKSPACE + 1);
-    GetClientRect(mdiClient, &pd2d->rc);
-    HWND hwnd = CreateMdiChildWindow(mdiClient, className, NULL,pd2d->rc,hInstance);
-    SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) ^ WS_SYSMENU ^ WS_CAPTION ^ WS_BORDER ^ WS_SIZEBOX);
-    SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED|WS_EX_NOACTIVATE);
+    RegisterWindowClass(className, PaintWinProc, hInstance, (HBRUSH)COLOR_APPWORKSPACE + 1);
+    GetClientRect(mdiClient, &rc);
+    HWND hwnd = CreateMdiChildWindow(mdiClient, className, NULL, rc, hInstance);
+    DeleteWindowStyle(hwnd, WS_BORDER|WS_SIZEBOX| WS_SYSMENU| WS_MAXIMIZEBOX| WS_MINIMIZEBOX| WS_CAPTION);
+    SetWindowStyleEx(hwnd, WS_EX_LAYERED | WS_EX_NOACTIVATE);
     PostMessage(hwnd, WM_PAINT, NULL, NULL);
     return hwnd;
 }
 //重载
-inline HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* pd2d)
+inline HWND CreatePaintMdiChildWindow(HWND mdiClient,HINSTANCE hInstance)
 {
-    return CreatePaintMdiChildWindow(mdiClient, hInstance, pd2d, DefMDIChildProc);
+    return CreatePaintMdiChildWindow(mdiClient, hInstance, DefMDIChildProc);
 }
 bool DeleteWindowStyle(HWND hwnd, UINT style)
 {
@@ -271,161 +272,38 @@ bool GetProcessModuleInfo(DWORD nPid, LPCTSTR szModuleName, LPDWORD lpBaseAddr, 
     CloseHandle(hModuleSnap);
     return FALSE;
 }
-
-//初始化D2D,在窗口过程的WM_CREATE消息中使用
-bool InitD2D(HWND hWnd,d2d* lpD2d)
-{
-    //绘制区域
-    GetClientRect(hWnd, &lpD2d->rc);
-    HRESULT hr; //接受返回值来判断是否失败
-    hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &lpD2d->pD2DFactory);
-    if (FAILED(hr))
-        return false;
-    //创建渲染目标
-    hr = lpD2d->pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(hWnd, D2D1::SizeU(lpD2d->rc.right - lpD2d->rc.left, lpD2d->rc.bottom - lpD2d->rc.top)), &lpD2d->pRenderTarget);
-    if (FAILED(hr))
-        return false;
-    hr = lpD2d->pRenderTarget->CreateSolidColorBrush((D2D1::ColorF)D2D1::ColorF::Red, &lpD2d->pBrush);
-    if (FAILED(hr))
-        return false;
-    //创建文本工厂
-    hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&lpD2d->pDWriteFactory));
-    if (FAILED(hr))
-        return false;
-    //创建文本
-    //第一个参数是字体名，倒数第三个是字体大小，倒数第二个是字体语言
-    hr = lpD2d->pDWriteFactory->CreateTextFormat(L"微软雅黑", NULL, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12.0f, L"zh-cn", &lpD2d->pWriteTextFormat);
-    if (FAILED(hr))
-        return false;
-    //设置水平居中
-    SetAlignmentLevelCenter(lpD2d);
-    //设置段落居中
-    SetAlignmentVerticalCenter(lpD2d);
-    return true;
-}
-void ReleaseD2D(d2d* lpD2d)
-{
-    if (lpD2d->pD2DFactory)
-        lpD2d->pD2DFactory->Release();
-    if (lpD2d->pRenderTarget)
-        lpD2d->pRenderTarget->Release();
-    if (lpD2d->pBrush)
-        lpD2d->pBrush->Release();
-    if (lpD2d->pDWriteFactory)
-        lpD2d->pDWriteFactory->Release();
-    if (lpD2d->pWriteTextFormat)
-        lpD2d->pWriteTextFormat->Release();
-}
-//设置颜色
-inline void BrushColor(d2d* lpD2d,D2D1::ColorF color)
-{
-    lpD2d->pBrush->SetColor(color);
-}
-//设置文本水平居中
-inline void SetAlignmentLevelCenter(d2d* lpD2d)
-{
-    lpD2d->pWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-}
-//设置文本左对齐
-inline void SetAlignmentLevelLeft(d2d* lpD2d)
-{
-    lpD2d->pWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-}
-//设置文本右对齐
-inline void SetAlignmentLevelRight(d2d* lpD2d)
-{
-    lpD2d->pWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-}
-//设置文本垂直居中
-inline void SetAlignmentVerticalCenter(d2d* lpD2d)
-{
-    lpD2d->pWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-}
-//设置文本靠顶
-inline void SetAlignmentVerticalTop(d2d* lpD2d)
-{
-    lpD2d->pWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-}
-//设置文本靠底
-inline void SetAlignmentVerticalBottom(d2d* lpD2d)
-{
-    lpD2d->pWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
-}
-//画普通矩形
-inline void DrawRect(d2d* lpD2d,const D2D1_RECT_F &rect,float sweight)
-{
-    lpD2d->pRenderTarget->DrawRectangle(rect, lpD2d->pBrush, sweight);
-}
-//画普通矩形重载
-inline void DrawRect(d2d* lpD2d, const D2D1_RECT_F& rect)
-{
-    lpD2d->pRenderTarget->DrawRectangle(rect, lpD2d->pBrush);
-}
-//画普通矩形填充
-inline void FillRect(d2d* lpD2d, const D2D1_RECT_F& rect)
-{
-    lpD2d->pRenderTarget->FillRectangle(rect, lpD2d->pBrush);
-}
-//画圆
-inline void DrawCircle(d2d* lpD2d,const D2D1_ELLIPSE &ellipse,float sweight)
-{
-    lpD2d->pRenderTarget->DrawEllipse(ellipse, lpD2d->pBrush, sweight);
-}
-//画圆重载
-inline void DrawCircle(d2d* lpD2d,const D2D1_ELLIPSE &ellipse)
-{
-    lpD2d->pRenderTarget->DrawEllipse(ellipse, lpD2d->pBrush);
-}
-inline void FillCircle(d2d* lpD2d,const D2D1_ELLIPSE &ellipse)
-{
-    lpD2d->pRenderTarget->FillEllipse(ellipse, lpD2d->pBrush);
-}
-//画线
-inline void DrawLine(d2d* lpD2d,D2D1_POINT_2F p1, D2D1_POINT_2F p2,float sweight)
-{
-    lpD2d->pRenderTarget->DrawLine(p1, p2, lpD2d->pBrush, sweight);
-}
-//画线重载
-inline void DrawLine(d2d* lpD2d, D2D1_POINT_2F p1, D2D1_POINT_2F p2)
-{
-    lpD2d->pRenderTarget->DrawLine(p1, p2, lpD2d->pBrush);
-}
-//输出字符串
-inline void DrawStr(d2d* lpD2d, LPCTSTR str, const D2D1_RECT_F &rect)
-{
-    lpD2d->pRenderTarget->DrawText(str, lstrlen(str), lpD2d->pWriteTextFormat, rect, lpD2d->pBrush);
-}
-void FollowTargetWindow(HWND own, HWND target,d2d* lpD2d)
+bool FollowTargetWindow(HWND own, HWND target,RECT* rc)
 {
     static POINT tmp, tmp1;
     POINT gw = { 0 };
-    GetClientRect(target, &lpD2d->rc);
+    GetClientRect(target, rc);
     ClientToScreen(target, &gw);
     if (tmp1.x != gw.x || tmp1.y != gw.y)
     {
-        SetWindowPos(own, NULL, gw.x, gw.y, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOREDRAW);
+        SetWindowPos(own, NULL, gw.x, gw.y,rc->right, rc->bottom, SWP_NOREDRAW);
         tmp1 = gw;
     }
     else
     {
         Sleep(50);
     }
-    if (tmp.x != lpD2d->rc.right || tmp.y != lpD2d->rc.bottom)
+    if (tmp.x != rc->right || tmp.y != rc->bottom)
     {
-        ReleaseD2D(lpD2d);
-        tmp = { lpD2d->rc.right,lpD2d->rc.bottom };
-        InitD2D(own, lpD2d);
+        tmp = {rc->right,rc->bottom };
+        SendMessage(own, WM_CREATED2D,0,0);
+        return true;
     }
+    return false;
 }
-void FollowTargetWindow(HWND parent, HWND paint,HWND target, d2d* lpD2d)
+bool FollowTargetWindow(HWND parent, HWND paint,HWND target,RECT* rc)
 {
     static POINT tmp,tmp1;
     POINT gw = { 0 };
-    GetClientRect(target, &lpD2d->rc);
+    GetClientRect(target, rc);
     ClientToScreen(target, &gw);
     if (tmp1.x != gw.x || tmp1.y != gw.y)
     {
-        SetWindowPos(parent, NULL, gw.x, gw.y, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOREDRAW);
+        SetWindowPos(parent, NULL, gw.x, gw.y,rc->right, rc->bottom, SWP_NOREDRAW);
         tmp1 = gw;
     }
     else
@@ -433,13 +311,15 @@ void FollowTargetWindow(HWND parent, HWND paint,HWND target, d2d* lpD2d)
         Sleep(50);
     }
 
-    if (tmp.x != lpD2d->rc.right || tmp.y != lpD2d->rc.bottom)
+    if (tmp.x != rc->right || tmp.y != rc->bottom)
     {
-        tmp = { lpD2d->rc.right,lpD2d->rc.bottom };
+        tmp = {rc->right,rc->bottom };
         //绘制子窗口跟随父窗口并置底
-        SetWindowPos(paint, HWND_BOTTOM, 0, 0, lpD2d->rc.right, lpD2d->rc.bottom, SWP_NOACTIVATE | SWP_NOREDRAW);
-        PostMessage(paint, WM_CREATED2D, NULL, NULL);
+        SetWindowPos(paint, HWND_BOTTOM, 0, 0, rc->right, rc->bottom, SWP_NOACTIVATE | SWP_NOREDRAW);
+        SendMessage(paint, WM_CREATED2D, 0, 0);
+        return true;
     }
+    return false;
 }
 //激活窗口
 void ActivateWindow(HWND hWnd)
@@ -531,18 +411,6 @@ bool SwitchWindow(HWND hWnd)
 {
     return ShowWindow(hWnd, IsWindowVisible(hWnd) ? SW_HIDE : SW_SHOW);
 }
-
-void BeginRander(d2d* lpD2d, D2D1::ColorF color)
-{
-    lpD2d->pRenderTarget->BeginDraw();
-    lpD2d->pRenderTarget->Clear(color);
-}
-
-void EndRander(d2d* lpD2d)
-{
-    lpD2d->pRenderTarget->EndDraw();
-}
-
 bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc,LPVOID args)
 {
     HANDLE hThread = CreateThread(NULL, NULL, lpThreadFunc, args, 0, 0);
@@ -550,4 +418,125 @@ bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc,LPVOID args)
         return false;
     CloseHandle(hThread);
     return true;
+}
+
+//构造函数
+EasyD2D::EasyD2D(){
+	//初始化为0
+	pD2DFactory = NULL;
+	pRenderTarget = NULL;
+	pBrush = NULL;
+	pDWriteFactory = NULL;		
+	pBigWriteTextFormat = NULL;
+	pSmallWriteTextFormat = NULL;
+}
+//析构函数
+EasyD2D::~EasyD2D(){
+	//释放D2D
+	if (pD2DFactory)			pD2DFactory->Release();
+	if (pRenderTarget)			pRenderTarget->Release();
+	if (pBrush)					pBrush->Release();
+	if (pDWriteFactory)			pDWriteFactory->Release();
+	if (pBigWriteTextFormat)	pBigWriteTextFormat->Release();
+	if (pSmallWriteTextFormat)	pSmallWriteTextFormat->Release();
+}
+//初始化
+bool EasyD2D::Init(HWND hWnd){
+	if (D2D1CreateFactory(D2D1_FACTORY_TYPE::D2D1_FACTORY_TYPE_SINGLE_THREADED, &pD2DFactory) != S_OK)
+		return false;
+	RECT rc;
+	GetClientRect(hWnd, &rc);
+	if (pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(hWnd, D2D1::SizeU(rc.right, rc.bottom)), &pRenderTarget) != S_OK)
+		return false;
+	if (pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(0xFF0000), &pBrush) != S_OK)
+		return false;
+	if (DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&pDWriteFactory)) != S_OK)
+		return false;
+	//创建大字体
+	//第一个参数是字体名倒数第三个是字体大小其他默认就行
+	if(pDWriteFactory->CreateTextFormat(L"微软雅黑", NULL, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 16, L"zh-cn", &pBigWriteTextFormat) != S_OK)
+		return false;
+	//创建小字体
+	if(pDWriteFactory->CreateTextFormat(L"微软雅黑", NULL, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12, L"zh-cn", &pSmallWriteTextFormat) != S_OK)
+		return false;
+	//设置水平居中
+	SetAlignmentLevelCenter();
+	//设置段落居中
+	SetAlignmentVerticalCenter();
+
+	return true;
+}
+//清屏
+void EasyD2D::Clear(D2D1::ColorF color){
+	pRenderTarget->Clear(color);
+}
+//设置颜色
+void EasyD2D::SetColor(D2D1::ColorF color){
+	pBrush->SetColor(color);
+}
+//设置文本水平居中
+void EasyD2D::SetAlignmentLevelCenter(){
+	pBigWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+	pSmallWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+}
+//设置文本左对齐
+void EasyD2D::SetAlignmentLevelLeft(){
+	pBigWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+	pSmallWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+}
+//设置文本右对齐
+void EasyD2D::SetAlignmentLevelRight(){
+	pBigWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+	pSmallWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+}
+//设置文本垂直居中
+ void EasyD2D::SetAlignmentVerticalCenter(){
+	pBigWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+	pSmallWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+}
+//设置文本靠顶
+ void EasyD2D::SetAlignmentVerticalTop(){
+	pBigWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+	pSmallWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+}
+//设置文本靠底
+ void EasyD2D::SetAlignmentVerticalBottom(){
+	pBigWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+	pSmallWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+}
+//画矩形
+void EasyD2D::DrawRect(const D2D1_RECT_F &rect){
+	pRenderTarget->DrawRectangle(rect, pBrush);
+}
+//画矩形(指定线宽)
+void EasyD2D::DrawRect(const D2D1_RECT_F& rect, float lWeight){
+	pRenderTarget->DrawRectangle(rect, pBrush,lWeight);
+}
+//填充矩形
+void EasyD2D::FillRect(const D2D1_RECT_F& rect){
+	pRenderTarget->FillRectangle(rect, pBrush);
+}
+//画圆
+ void EasyD2D::DrawCircle(const D2D1_ELLIPSE& ellipse, float lWeight){
+	pRenderTarget->DrawEllipse(ellipse, pBrush, lWeight);
+}
+//画圆(指定线宽)
+ void EasyD2D::DrawCircle(const D2D1_ELLIPSE& ellipse){
+	 pRenderTarget->DrawEllipse(ellipse, pBrush);
+}
+//填充圆
+ void EasyD2D::FillCircle(const D2D1_ELLIPSE& ellipse){
+	 pRenderTarget->FillEllipse(ellipse, pBrush);
+}
+//画线
+void EasyD2D::DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2){
+	pRenderTarget->DrawLine(p1, p2, pBrush);
+}
+//画线(指定线宽)
+void EasyD2D::DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2, float sweight){
+	pRenderTarget->DrawLine(p1, p2, pBrush, sweight);
+}
+//画字符
+void EasyD2D::DrawStr(LPCTSTR str, const D2D1_RECT_F& rect, bool isBigFont){
+	pRenderTarget->DrawText(str, lstrlen(str), isBigFont ? pBigWriteTextFormat : pSmallWriteTextFormat, rect, pBrush);
 }

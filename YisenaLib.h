@@ -1,27 +1,14 @@
 #pragma once
 #include <windows.h>
 #include <tlhelp32.h>
-#include <d2d1_1.h>
-#include <dwrite_1.h>
+#include <d2d1.h>
+#include <dwrite.h>
+#pragma comment(lib,"YisenaLib.lib")
 #pragma comment(lib,"d2d1.lib")
 #pragma comment(lib,"dwrite.lib")
-#pragma comment(lib,"YisenaLib.lib")
-
 #define WM_NOTIFYICON (WM_USER+51)
 #define WM_CREATED2D (WM_USER+52)
 #define CREATEHINSTANCE(x) (((LPCREATESTRUCT)x)->hInstance)
-/// <summary>
-/// d2d设备
-/// </summary>
-typedef struct d2d{
-	ID2D1Factory* pD2DFactory = NULL; //d2d工厂
-	ID2D1HwndRenderTarget* pRenderTarget = NULL;   //渲染目标
-	ID2D1SolidColorBrush* pBrush = NULL; //画刷
-	IDWriteFactory* pDWriteFactory = NULL;//文本工厂
-	IDWriteTextFormat* pWriteTextFormat = NULL; //文本
-	//窗口矩形
-	RECT rc;
-}d2d;
 /// <summary>
 /// 选择文件对话框(创建一个文件选择对话框)
 /// </summary>
@@ -177,7 +164,7 @@ extern inline HWND CreateMdiChildWindow(HWND mdiClient, LPCTSTR lpszClassName, L
 /// <param name="pd2d">d2d设备指针</param>
 /// <param name="PaintWinProc">绘制子窗口窗口过程</param>
 /// <returns>新窗口句柄</returns>
-extern HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* pd2d, WNDPROC PaintWinProc);
+extern HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance,WNDPROC PaintWinProc);
 /// <summary>
 /// 创建MDI绘制子窗口(无窗口过程)
 /// </summary>
@@ -185,7 +172,7 @@ extern HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* 
 /// <param name="hInstance">模块句柄</param>
 /// <param name="pd2d">d2d设备指针</param>
 /// <returns>新窗口句柄</returns>
-extern inline HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance, d2d* pd2d);
+extern inline HWND CreatePaintMdiChildWindow(HWND mdiClient, HINSTANCE hInstance);
 /// <summary>
 /// 删除窗口样式
 /// </summary>
@@ -267,128 +254,22 @@ extern LPDWORD SearchMemory(HANDLE hProcess, DWORD nBaseAddr, DWORD nBaseSize, B
 /// <returns>是否成功</returns>
 extern bool GetProcessModuleInfo(DWORD nPid, LPCTSTR szModuleName, LPDWORD lpBaseAddr, LPDWORD lpBaseSize);
 /// <summary>
-/// 初始化d2d
-/// </summary>
-/// <param name="hWnd">窗口句柄</param>
-/// <param name="lpD2d">(返回)d2d设备</param>
-/// <returns>是否成功</returns>
-extern bool InitD2D(HWND hWnd, d2d* lpD2d);
-/// <summary>
-/// 释放d2d设备
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern void ReleaseD2D(d2d* lpD2d);
-/// <summary>
-/// 设置绘制颜色
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="color">颜色值</param>
-extern inline void BrushColor(d2d* lpD2d, D2D1::ColorF color);
-/// <summary>
-/// 设置文本水平居中
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern inline void SetAlignmentLevelCenter(d2d* lpD2d);
-/// <summary>
-/// 设置文本左对齐
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern inline void SetAlignmentLevelLeft(d2d* lpD2d);
-/// <summary>
-/// 设置文本右对齐
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern inline void SetAlignmentLevelRight(d2d* lpD2d);
-/// <summary>
-/// 设置文本垂直居中
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern inline void SetAlignmentVerticalCenter(d2d* lpD2d);
-/// <summary>
-/// 设置文本垂直靠顶
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern inline void SetAlignmentVerticalTop(d2d* lpD2d);
-/// <summary>
-/// 设置文本垂直靠底
-/// </summary>
-/// <param name="lpD2d">d2d设备结构指针</param>
-extern inline void SetAlignmentVerticalBottom(d2d* lpD2d);
-/// <summary>
-/// 画普通矩形(指定线宽)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="rect">矩形结构</param>
-/// <param name="sweight">宽度</param>
-extern inline void DrawRect(d2d* lpD2d,const D2D1_RECT_F &rect, float sweight);
-/// <summary>
-/// 画普通矩形(不指定线宽)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="rect">矩形结构</param>
-extern inline void DrawRect(d2d* lpD2d, const D2D1_RECT_F &rect);
-/// <summary>
-/// 画普通矩形(填充)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="rect">矩形结构</param>
-extern inline void FillRect(d2d* lpD2d, const D2D1_RECT_F &rect);
-/// <summary>
-/// 画圆(指定线宽)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="ellipse">圆结构</param>
-/// <param name="sweight">线宽</param>
-extern inline void DrawCircle(d2d* lpD2d, const D2D1_ELLIPSE &ellipse, float sweight);
-/// <summary>
-/// 画圆(不指定线宽)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="ellipse">圆结构</param>
-extern void DrawCircle(d2d* lpD2d, const D2D1_ELLIPSE& ellipse);
-/// <summary>
-/// 画圆(填充)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="ellipse">圆结构</param>
-extern void FillCircle(d2d* lpD2d, const D2D1_ELLIPSE& ellipse);
-/// <summary>
-/// 画线(指定线宽)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="p1">点1</param>
-/// <param name="p2">点2</param>
-/// <param name="sweight">线宽</param>
-extern inline void DrawLine(d2d* lpD2d, D2D1_POINT_2F p1, D2D1_POINT_2F p2, float sweight);
-/// <summary>
-/// 画线(不指定线宽)
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="p1">点1</param>
-/// <param name="p2">点2</param>
-extern inline void DrawLine(d2d* lpD2d, D2D1_POINT_2F p1, D2D1_POINT_2F p2);
-/// <summary>
-/// 输出字符串
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="str">字符串</param>
-/// <param name="rect">矩形结构</param>
-extern inline void DrawStr(d2d* lpD2d, LPCTSTR str, const D2D1_RECT_F &rect);
-/// <summary>
 /// 跟随窗口(普通)
 /// </summary>
 /// <param name="own">自身窗口句柄</param>
 /// <param name="target">目标窗口句柄</param>
-/// <param name="lpD2d">d2d设备指针</param>
-extern void FollowTargetWindow(HWND own, HWND target, d2d* lpD2d);
+/// <param name="rc">[IN][OUT]窗口矩形</param>
+/// <returns>窗口大小是否改变</returns>
+extern bool FollowTargetWindow(HWND own, HWND target,RECT* rc);
 /// <summary>
 /// 跟随窗口(MDI)
 /// </summary>
 /// <param name="parent">父窗口句柄</param>
 /// <param name="paint">绘制子窗口句柄</param>
 /// <param name="target">目标窗口句柄</param>
-/// <param name="lpD2d">d2d设备指针</param>
-extern void FollowTargetWindow(HWND parent, HWND paint, HWND target, d2d* lpD2d);
+/// <param name="rc">[IN][OUT]新窗口矩形</param>
+/// <returns>窗口大小是否改变</returns>
+extern bool FollowTargetWindow(HWND parent, HWND paint, HWND target,RECT* rc);
 /// <summary>
 /// 激活窗口(PAINT)
 /// </summary>
@@ -453,20 +334,124 @@ extern HBRUSH CreateBitMapBrush(DWORD resId, HINSTANCE hInstance);
 /// <returns>是否成功</returns>
 extern bool SwitchWindow(HWND hWnd);
 /// <summary>
-/// 开始绘制
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-/// <param name="color">颜色</param>
-extern void BeginRander(d2d* lpD2d, D2D1::ColorF color);
-/// <summary>
-/// 结束绘制
-/// </summary>
-/// <param name="lpD2d">d2d设备指针</param>
-extern void EndRander(d2d* lpD2d);
-/// <summary>
 /// 以新线程启动函数
 /// </summary>
 /// <param name="lpThreadFunc">线程函数</param>
 /// <param name="args">参数</param>
 /// <returns>是否成功</returns>
 extern bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc, LPVOID args);
+
+
+//EasyD2D类
+class EasyD2D {
+private:
+	ID2D1Factory* pD2DFactory;					//d2d工厂
+	ID2D1HwndRenderTarget* pRenderTarget;		//渲染目标
+	ID2D1SolidColorBrush* pBrush;				//画刷
+	IDWriteFactory* pDWriteFactory;				//文本工厂
+	IDWriteTextFormat* pBigWriteTextFormat;		//文本 大字体
+	IDWriteTextFormat* pSmallWriteTextFormat;	//文本 小字体
+public:
+	EasyD2D();
+	~EasyD2D();
+	/// <summary>
+	/// 初始化D2D
+	/// </summary>
+	/// <param name="hWnd">绘制窗口句柄</param>
+	/// <returns>是否成功</returns>
+	bool Init(HWND hWnd);
+	/// <summary>
+	/// 开始绘制
+	/// </summary>
+	void BeginDraw() { pRenderTarget->BeginDraw(); }
+	/// <summary>
+	/// 结束绘制
+	/// </summary>
+	void EndDraw() { pRenderTarget->EndDraw(); }
+	/// <summary>
+	/// 清屏
+	/// </summary>
+	/// <param name="color">填充的颜色值</param>
+	void Clear(D2D1::ColorF color);
+	/// <summary>
+	/// 设置绘制颜色
+	/// </summary>
+	/// <param name="color">颜色值</param>
+	void SetColor(D2D1::ColorF color);
+	/// <summary>
+	/// 设置文本水平居中
+	/// </summary>
+	void SetAlignmentLevelCenter();
+	/// <summary>
+	/// 设置文本左对齐
+	/// </summary>
+	void SetAlignmentLevelLeft();
+	/// <summary>
+	/// 设置文本右对齐
+	/// </summary>
+	void SetAlignmentLevelRight();
+	/// <summary>
+	/// 设置文本垂直居中
+	/// </summary>
+	void SetAlignmentVerticalCenter();
+	/// <summary>
+	/// 设置文本靠顶
+	/// </summary>
+	void SetAlignmentVerticalTop();
+	/// <summary>
+	/// 设置文本靠底
+	/// </summary>
+	void SetAlignmentVerticalBottom();
+	/// <summary>
+	/// 画矩形
+	/// </summary>
+	/// <param name="rect">矩形结构</param>
+	void DrawRect(const D2D1_RECT_F& rect);
+	/// <summary>
+	/// 画矩形(指定线宽)
+	/// </summary>
+	/// <param name="rect">矩形结构</param>
+	/// <param name="lWeight">线宽</param>
+	void DrawRect(const D2D1_RECT_F& rect, float lWeight);
+	/// <summary>
+	/// 填充矩形
+	/// </summary>
+	/// <param name="rect">矩形结构</param>
+	void FillRect(const D2D1_RECT_F& rect);
+	/// <summary>
+	/// 画圆
+	/// </summary>
+	/// <param name="ellipse">圆形结构</param>
+	void DrawCircle(const D2D1_ELLIPSE& ellipse);
+	/// <summary>
+	/// 画圆(指定线宽)
+	/// </summary>
+	/// <param name="ellipse">圆形结构</param>
+	/// <param name="lWeight">线宽</param>
+	void DrawCircle(const D2D1_ELLIPSE& ellipse, float lWeight);
+	/// <summary>
+	/// 填充圆
+	/// </summary>
+	/// <param name="ellipse">圆形结构</param>
+	void FillCircle(const D2D1_ELLIPSE& ellipse);
+	/// <summary>
+	/// 画线
+	/// </summary>
+	/// <param name="p1">第一个点坐标</param>
+	/// <param name="p2">第二个点坐标</param>
+	void DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2);
+	/// <summary>
+	/// 画线(指定线宽)
+	/// </summary>
+	/// <param name="p1">第一个点坐标</param>
+	/// <param name="p2">第二个点坐标</param>
+	/// <param name="lWeight">线宽</param>
+	void DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2, float lWeight);
+	/// <summary>
+	/// 画字符
+	/// </summary>
+	/// <param name="str">字符指针</param>
+	/// <param name="rect">字符区域(矩形结构)</param>
+	/// <param name="isBigFont">是否使用大字体</param>
+	void DrawStr(LPCTSTR str, const D2D1_RECT_F& rect, bool isBigFont);
+};
