@@ -466,6 +466,14 @@ bool EasyD2D::Init(HWND hWnd){
 
 	return true;
 }
+//开始绘制
+void EasyD2D::BeginDraw(){
+    pRenderTarget->BeginDraw();
+}
+// 结束绘制
+void EasyD2D::EndDraw(){
+    pRenderTarget->EndDraw();
+}
 //清屏
 void EasyD2D::Clear(D2D1::ColorF color){
 	pRenderTarget->Clear(color);
@@ -539,4 +547,34 @@ void EasyD2D::DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2, float sweight){
 //画字符
 void EasyD2D::DrawStr(LPCTSTR str, const D2D1_RECT_F& rect, bool isBigFont){
 	pRenderTarget->DrawText(str, lstrlen(str), isBigFont ? pBigWriteTextFormat : pSmallWriteTextFormat, rect, pBrush);
+}
+//构造函数
+ConfigFile::ConfigFile(LPCTSTR szFilePath){
+    szPath = szFilePath;
+}
+//读字符串
+bool ConfigFile::ReadString(LPCTSTR szAppName, LPCTSTR szKeyName, LPTSTR szValue,DWORD size){
+    return GetPrivateProfileString(szAppName, szKeyName, L"", szValue, size, szPath);  
+}
+//写字符串
+bool ConfigFile::WriteString(LPCTSTR szAppName, LPCTSTR szKeyName, LPTSTR szValue) {
+    return WritePrivateProfileString(szAppName, szKeyName, szValue, szPath);
+}
+//读整数
+UINT ConfigFile::ReadInt(LPCTSTR szAppName, LPCTSTR szKeyName) {
+    return GetPrivateProfileInt(szAppName, szKeyName, 0, szPath);
+}
+//写整数
+bool ConfigFile::WriteInt(LPCTSTR szAppName, LPCTSTR szKeyName, UINT dwValue) {
+    TCHAR num[5];
+    wsprintf(num, L"%u", dwValue);
+    return WriteProfileString(szAppName, szKeyName, num);
+}
+//读结构
+bool ConfigFile::ReadStruct(LPCTSTR szAppName, LPCTSTR szKeyName, LPVOID lpStruct, DWORD size) {
+    return GetPrivateProfileStruct(szAppName, szKeyName, lpStruct, size, szPath);
+}
+//写结构
+bool ConfigFile::WriteStruct(LPCTSTR szAppName, LPCTSTR szKeyName, LPVOID lpStruct, DWORD size) {
+    return WritePrivateProfileStruct(szAppName, szKeyName, lpStruct, size, szPath);
 }

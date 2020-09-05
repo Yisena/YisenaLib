@@ -363,11 +363,11 @@ public:
 	/// <summary>
 	/// 开始绘制
 	/// </summary>
-	void BeginDraw() { pRenderTarget->BeginDraw(); }
+	void BeginDraw();
 	/// <summary>
 	/// 结束绘制
 	/// </summary>
-	void EndDraw() { pRenderTarget->EndDraw(); }
+	void EndDraw();
 	/// <summary>
 	/// 清屏
 	/// </summary>
@@ -454,4 +454,65 @@ public:
 	/// <param name="rect">字符区域(矩形结构)</param>
 	/// <param name="isBigFont">是否使用大字体</param>
 	void DrawStr(LPCTSTR str, const D2D1_RECT_F& rect, bool isBigFont);
+};
+
+class ConfigFile {
+private:
+	LPCTSTR szPath;
+public:
+	/// <summary>
+	/// 构造函数
+	/// </summary>
+	/// <param name="szFilePath">配置文件目录</param>
+	ConfigFile(LPCTSTR szFilePath);
+	/// <summary>
+	/// 读字符键值
+	/// </summary>
+	/// <param name="szAppName">字段名</param>
+	/// <param name="szKeyName">键名</param>
+	/// <param name="szValue">[OUT]用于缓存值的指针</param>
+	/// <param name="size">缓存的大小</param>
+	/// <returns>是否成功</returns>
+	bool ReadString(LPCTSTR szAppName,LPCTSTR szKeyName,LPTSTR szValue,DWORD size);
+	/// <summary>
+	/// 写字符键值
+	/// </summary>
+	/// <param name="szAppName">字段名</param>
+	/// <param name="szKeyName">键名</param>
+	/// <param name="szValue">[IN]要写的键值</param>
+	/// <returns>是否成功</returns>
+	bool WriteString(LPCTSTR szAppName, LPCTSTR szKeyName, LPTSTR szValue);
+	/// <summary>
+	/// 读整数
+	/// </summary>
+	/// <param name="szAppName">字段名</param>
+	/// <param name="szKeyName">键名</param>
+	/// <returns>键值(默认返回0)</returns>
+	UINT ReadInt(LPCTSTR szAppName, LPCTSTR szKeyName);
+	/// <summary>
+	/// 写整数
+	/// </summary>
+	/// <param name="szAppName">字段名</param>
+	/// <param name="szKeyName">键名</param>
+	/// <param name="dwValue">键值</param>
+	/// <returns>是否成功</returns>
+	bool WriteInt(LPCTSTR szAppName, LPCTSTR szKeyName, UINT dwValue);
+	/// <summary>
+	/// 读结构
+	/// </summary>
+	/// <param name="szAppName">字段名</param>
+	/// <param name="szKeyName">键名</param>
+	/// <param name="lpStruct">[OUT]结构体指针</param>
+	/// <param name="size">结构体大小</param>
+	/// <returns>是否成功</returns>
+	bool ReadStruct(LPCTSTR szAppName, LPCTSTR szKeyName, LPVOID lpStruct, DWORD size);
+	/// <summary>
+	/// 写结构
+	/// </summary>
+	/// <param name="szAppName">字段名</param>
+	/// <param name="szKeyName">键名</param>
+	/// <param name="lpStruct">[IN]结构体指针</param>
+	/// <param name="size">结构体大小</param>
+	/// <returns>是否成功</returns>
+	bool WriteStruct(LPCTSTR szAppName, LPCTSTR szKeyName, LPVOID lpStruct, DWORD size);
 };
