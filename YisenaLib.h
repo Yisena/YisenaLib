@@ -1,11 +1,7 @@
 #pragma once
 #include <windows.h>
 #include <tlhelp32.h>
-#include <d2d1.h>
-#include <dwrite.h>
 #pragma comment(lib,"YisenaLib.lib")
-#pragma comment(lib,"d2d1.lib")
-#pragma comment(lib,"dwrite.lib")
 #define WM_NOTIFYICON (WM_USER+51)
 #define WM_CREATED2D (WM_USER+52)
 #define CREATEHINSTANCE(x) (((LPCREATESTRUCT)x)->hInstance)
@@ -340,121 +336,6 @@ extern bool SwitchWindow(HWND hWnd);
 /// <param name="args">参数</param>
 /// <returns>是否成功</returns>
 extern bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc, LPVOID args);
-
-
-//EasyD2D类
-class EasyD2D {
-private:
-	ID2D1Factory* pD2DFactory;					//d2d工厂
-	ID2D1HwndRenderTarget* pRenderTarget;		//渲染目标
-	ID2D1SolidColorBrush* pBrush;				//画刷
-	IDWriteFactory* pDWriteFactory;				//文本工厂
-	IDWriteTextFormat* pBigWriteTextFormat;		//文本 大字体
-	IDWriteTextFormat* pSmallWriteTextFormat;	//文本 小字体
-public:
-	EasyD2D();
-	~EasyD2D();
-	/// <summary>
-	/// 初始化D2D
-	/// </summary>
-	/// <param name="hWnd">绘制窗口句柄</param>
-	/// <returns>是否成功</returns>
-	bool Init(HWND hWnd);
-	/// <summary>
-	/// 开始绘制
-	/// </summary>
-	void BeginDraw();
-	/// <summary>
-	/// 结束绘制
-	/// </summary>
-	void EndDraw();
-	/// <summary>
-	/// 清屏
-	/// </summary>
-	/// <param name="color">填充的颜色值</param>
-	void Clear(D2D1::ColorF color);
-	/// <summary>
-	/// 设置绘制颜色
-	/// </summary>
-	/// <param name="color">颜色值</param>
-	void SetColor(D2D1::ColorF color);
-	/// <summary>
-	/// 设置文本水平居中
-	/// </summary>
-	void SetAlignmentLevelCenter();
-	/// <summary>
-	/// 设置文本左对齐
-	/// </summary>
-	void SetAlignmentLevelLeft();
-	/// <summary>
-	/// 设置文本右对齐
-	/// </summary>
-	void SetAlignmentLevelRight();
-	/// <summary>
-	/// 设置文本垂直居中
-	/// </summary>
-	void SetAlignmentVerticalCenter();
-	/// <summary>
-	/// 设置文本靠顶
-	/// </summary>
-	void SetAlignmentVerticalTop();
-	/// <summary>
-	/// 设置文本靠底
-	/// </summary>
-	void SetAlignmentVerticalBottom();
-	/// <summary>
-	/// 画矩形
-	/// </summary>
-	/// <param name="rect">矩形结构</param>
-	void DrawRect(const D2D1_RECT_F& rect);
-	/// <summary>
-	/// 画矩形(指定线宽)
-	/// </summary>
-	/// <param name="rect">矩形结构</param>
-	/// <param name="lWeight">线宽</param>
-	void DrawRect(const D2D1_RECT_F& rect, float lWeight);
-	/// <summary>
-	/// 填充矩形
-	/// </summary>
-	/// <param name="rect">矩形结构</param>
-	void FillRect(const D2D1_RECT_F& rect);
-	/// <summary>
-	/// 画圆
-	/// </summary>
-	/// <param name="ellipse">圆形结构</param>
-	void DrawCircle(const D2D1_ELLIPSE& ellipse);
-	/// <summary>
-	/// 画圆(指定线宽)
-	/// </summary>
-	/// <param name="ellipse">圆形结构</param>
-	/// <param name="lWeight">线宽</param>
-	void DrawCircle(const D2D1_ELLIPSE& ellipse, float lWeight);
-	/// <summary>
-	/// 填充圆
-	/// </summary>
-	/// <param name="ellipse">圆形结构</param>
-	void FillCircle(const D2D1_ELLIPSE& ellipse);
-	/// <summary>
-	/// 画线
-	/// </summary>
-	/// <param name="p1">第一个点坐标</param>
-	/// <param name="p2">第二个点坐标</param>
-	void DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2);
-	/// <summary>
-	/// 画线(指定线宽)
-	/// </summary>
-	/// <param name="p1">第一个点坐标</param>
-	/// <param name="p2">第二个点坐标</param>
-	/// <param name="lWeight">线宽</param>
-	void DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2, float lWeight);
-	/// <summary>
-	/// 画字符
-	/// </summary>
-	/// <param name="str">字符指针</param>
-	/// <param name="rect">字符区域(矩形结构)</param>
-	/// <param name="isBigFont">是否使用大字体</param>
-	void DrawStr(LPCTSTR str, const D2D1_RECT_F& rect, bool isBigFont);
-};
 
 class ConfigFile {
 private:

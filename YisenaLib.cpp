@@ -283,9 +283,8 @@ bool FollowTargetWindow(HWND own, HWND target,RECT* rc)
         SetWindowPos(own, NULL, gw.x, gw.y,rc->right, rc->bottom, SWP_NOREDRAW);
         tmp1 = gw;
     }
-    else
-    {
-        Sleep(50);
+    else {
+        return false;
     }
     if (tmp.x != rc->right || tmp.y != rc->bottom)
     {
@@ -308,7 +307,7 @@ bool FollowTargetWindow(HWND parent, HWND paint,HWND target,RECT* rc)
     }
     else
     {
-        Sleep(50);
+        return false;
     }
 
     if (tmp.x != rc->right || tmp.y != rc->bottom)
@@ -420,134 +419,6 @@ bool StartThread(LPTHREAD_START_ROUTINE lpThreadFunc,LPVOID args)
     return true;
 }
 
-//构造函数
-EasyD2D::EasyD2D(){
-	//初始化为0
-	pD2DFactory = NULL;
-	pRenderTarget = NULL;
-	pBrush = NULL;
-	pDWriteFactory = NULL;		
-	pBigWriteTextFormat = NULL;
-	pSmallWriteTextFormat = NULL;
-}
-//析构函数
-EasyD2D::~EasyD2D(){
-	//释放D2D
-	if (pD2DFactory)			pD2DFactory->Release();
-	if (pRenderTarget)			pRenderTarget->Release();
-	if (pBrush)					pBrush->Release();
-	if (pDWriteFactory)			pDWriteFactory->Release();
-	if (pBigWriteTextFormat)	pBigWriteTextFormat->Release();
-	if (pSmallWriteTextFormat)	pSmallWriteTextFormat->Release();
-}
-//初始化
-bool EasyD2D::Init(HWND hWnd){
-	if (D2D1CreateFactory(D2D1_FACTORY_TYPE::D2D1_FACTORY_TYPE_SINGLE_THREADED, &pD2DFactory) != S_OK)
-		return false;
-	RECT rc;
-	GetClientRect(hWnd, &rc);
-	if (pD2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(hWnd, D2D1::SizeU(rc.right, rc.bottom)), &pRenderTarget) != S_OK)
-		return false;
-	if (pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(0xFF0000), &pBrush) != S_OK)
-		return false;
-	if (DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&pDWriteFactory)) != S_OK)
-		return false;
-	//创建大字体
-	//第一个参数是字体名倒数第三个是字体大小其他默认就行
-	if(pDWriteFactory->CreateTextFormat(L"微软雅黑", NULL, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 16, L"zh-cn", &pBigWriteTextFormat) != S_OK)
-		return false;
-	//创建小字体
-	if(pDWriteFactory->CreateTextFormat(L"微软雅黑", NULL, DWRITE_FONT_WEIGHT_REGULAR, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, 12, L"zh-cn", &pSmallWriteTextFormat) != S_OK)
-		return false;
-	//设置水平居中
-	SetAlignmentLevelCenter();
-	//设置段落居中
-	SetAlignmentVerticalCenter();
-
-	return true;
-}
-//开始绘制
-void EasyD2D::BeginDraw(){
-    pRenderTarget->BeginDraw();
-}
-// 结束绘制
-void EasyD2D::EndDraw(){
-    pRenderTarget->EndDraw();
-}
-//清屏
-void EasyD2D::Clear(D2D1::ColorF color){
-	pRenderTarget->Clear(color);
-}
-//设置颜色
-void EasyD2D::SetColor(D2D1::ColorF color){
-	pBrush->SetColor(color);
-}
-//设置文本水平居中
-void EasyD2D::SetAlignmentLevelCenter(){
-	pBigWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-	pSmallWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-}
-//设置文本左对齐
-void EasyD2D::SetAlignmentLevelLeft(){
-	pBigWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-	pSmallWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-}
-//设置文本右对齐
-void EasyD2D::SetAlignmentLevelRight(){
-	pBigWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-	pSmallWriteTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-}
-//设置文本垂直居中
- void EasyD2D::SetAlignmentVerticalCenter(){
-	pBigWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-	pSmallWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-}
-//设置文本靠顶
- void EasyD2D::SetAlignmentVerticalTop(){
-	pBigWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-	pSmallWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-}
-//设置文本靠底
- void EasyD2D::SetAlignmentVerticalBottom(){
-	pBigWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
-	pSmallWriteTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
-}
-//画矩形
-void EasyD2D::DrawRect(const D2D1_RECT_F &rect){
-	pRenderTarget->DrawRectangle(rect, pBrush);
-}
-//画矩形(指定线宽)
-void EasyD2D::DrawRect(const D2D1_RECT_F& rect, float lWeight){
-	pRenderTarget->DrawRectangle(rect, pBrush,lWeight);
-}
-//填充矩形
-void EasyD2D::FillRect(const D2D1_RECT_F& rect){
-	pRenderTarget->FillRectangle(rect, pBrush);
-}
-//画圆
- void EasyD2D::DrawCircle(const D2D1_ELLIPSE& ellipse, float lWeight){
-	pRenderTarget->DrawEllipse(ellipse, pBrush, lWeight);
-}
-//画圆(指定线宽)
- void EasyD2D::DrawCircle(const D2D1_ELLIPSE& ellipse){
-	 pRenderTarget->DrawEllipse(ellipse, pBrush);
-}
-//填充圆
- void EasyD2D::FillCircle(const D2D1_ELLIPSE& ellipse){
-	 pRenderTarget->FillEllipse(ellipse, pBrush);
-}
-//画线
-void EasyD2D::DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2){
-	pRenderTarget->DrawLine(p1, p2, pBrush);
-}
-//画线(指定线宽)
-void EasyD2D::DrawLine(D2D1_POINT_2F p1, D2D1_POINT_2F p2, float sweight){
-	pRenderTarget->DrawLine(p1, p2, pBrush, sweight);
-}
-//画字符
-void EasyD2D::DrawStr(LPCTSTR str, const D2D1_RECT_F& rect, bool isBigFont){
-	pRenderTarget->DrawText(str, lstrlen(str), isBigFont ? pBigWriteTextFormat : pSmallWriteTextFormat, rect, pBrush);
-}
 //构造函数
 ConfigFile::ConfigFile(LPCTSTR szFilePath){
     szPath = szFilePath;
